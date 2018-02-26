@@ -1,0 +1,4 @@
+*.o
+base64
+base64_test
+*.swp
