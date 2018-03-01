@@ -25,6 +25,12 @@ int main() {
     // invalid inputs
     testDecode("T", NULL, 0);
     testDecode("TWFu=", NULL, 0);
+    testDecode("=TWFu=", NULL, 0);
+    testDecode("T=WFu=", NULL, 0);
+    testDecode("TQ=", NULL, 0);
+    testDecode("TW|u=", NULL, 0);
+    testDecode("TQ==NN", NULL, 0);
+    testDecode("TQa*", NULL, 0);
     return 0;
 }
 

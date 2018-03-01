@@ -1,10 +1,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "base64.h"
 
 unsigned long decodedSize(char *input, unsigned long size);
 int8_t charToInt(char c);
+void clearAndFree(void *ptr, size_t size);
 char *lookupTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 char *base64encode(uint8_t *input, unsigned long size, unsigned long *eSize)
@@ -67,10 +69,16 @@ uint8_t *base64decode(char *input, unsigned long size, unsigned long *dSize) {
     uint8_t *decoded = malloc(ds * sizeof(uint8_t));
     unsigned int decodedIndex = 0;
     for (unsigned int i = 0; i < size; i += 4) {
+        // invalid positions for '='
+        if (input[i] == '=' || input[i+1] == '=') {
+            clearAndFree(decoded, ds);
+            return NULL;
+        }
+
         int8_t c1 = charToInt(input[i]);
         int8_t c2 = charToInt(input[i+1]);
         if (c1 == -1 || c2 == -1) {
-            free(decoded);
+            clearAndFree(decoded, ds);
             return NULL;
         }
 
@@ -80,13 +88,13 @@ uint8_t *base64decode(char *input, unsigned long size, unsigned long *dSize) {
         decoded[decodedIndex++] = (uint8_t)((c1_8 << 2) | (3 & (c2_8 >> 4)));
 
         // break if ending in '==' or '==' is missing
-        if (i+2 >= size || input[i+2] == '=') {
+        if (i+2 >= size || (i+4 == size && input[i+2] == '=' && i+3 < size && input[i+3] == '=')) {
             break;
         }
 
         int8_t c3 = charToInt(input[i+2]);
         if (c3 == -1) {
-            free(decoded);
+            clearAndFree(decoded, ds);
             return NULL;
         }
 
@@ -101,7 +109,7 @@ uint8_t *base64decode(char *input, unsigned long size, unsigned long *dSize) {
 
         int8_t c4 = charToInt(input[i+3]);
         if (c4 == -1) {
-            free(decoded);
+            clearAndFree(decoded, ds);
             return NULL;
         }
 
@@ -116,7 +124,7 @@ uint8_t *base64decode(char *input, unsigned long size, unsigned long *dSize) {
 
 /*
  * Converts the input base64 character to it's byte output value.
- * Returns -1 if it's an invalid char
+ * Returns -1 if it's an invalid char. '=' counts as invalid.
  */
 int8_t charToInt(char c) {
     if (c >= 65 && c <= 90) {
@@ -139,10 +147,6 @@ int8_t charToInt(char c) {
         return 63;
     }
 
-    if (c == '=') {
-        return 0;
-    }
-
     return -1;
 }
 
@@ -157,9 +161,9 @@ unsigned long decodedSize(char *input, unsigned long size) {
     char l2 = input[size-2];
 
     if (l1 == '=' && l2 == '=') {
-        return decodedSize - 2;
+        return size >= 4 && size % 4 == 0 ? decodedSize - 2 : 0;
     } else if (l1 == '=') {
-        return decodedSize - 1;
+        return size >= 4 && size % 4 == 0 ? decodedSize - 1 : 0;
     }
 
     if (size % 4 == 0) {
@@ -175,4 +179,9 @@ unsigned long decodedSize(char *input, unsigned long size) {
     }
 
     return 0;
+}
+
+void clearAndFree(void *ptr, size_t size) {
+    memset(ptr, 0, size);
+    free(ptr);
 }
