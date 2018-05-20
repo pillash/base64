@@ -4,40 +4,48 @@
 #include <string.h>
 #include "base64.h"
 
+int parseArguments(int argc, char **argv, char **mode, char **filename);
 uint8_t *readFileBinary(char *filename, unsigned long *size);
 
 int main(int argc, char ** argv) {
 
-    if (argc != 2) {
-        printf("Provide 1 filename\n");
+    char *mode;
+    char *filename;
+    if (parseArguments(argc, argv, &mode, &filename) == 0) {
+        printf("Foramt: base64 [-e|-d] filename\n");
         return 0;
     }
 
-    char *filename = argv[1];
-    unsigned long size;
-    uint8_t *input = readFileBinary(filename, &size);
+    if (strcmp(mode, "-e") == 0) {
+        unsigned long size;
+        uint8_t *input = readFileBinary(filename, &size);
 
-    unsigned long eSize;
-    char *output = base64encode(input, size, &eSize);
-    printf("%s\n", output);
-    free(input);
+        unsigned long eSize;
+        char *output = base64encode(input, size, &eSize);
+        printf("%s", output);
+        free(input);
+        return 0;
+    } else if (strcmp(mode, "-d") == 0) {
+        unsigned long size;
+        char *input = (char *)readFileBinary(filename, &size);
 
-    unsigned long ds;
-    input = base64decode(output, eSize, &ds);
-    if (input == NULL) {
-        printf("Error decoding\n");
+        unsigned long ds;
+        uint8_t *output = base64decode(input, size, &ds);
+        if (output == NULL) {
+            printf("Error decoding\n");
+            return 1;
+        }
+
+        for (unsigned int i = 0; i < ds; i++) {
+            printf("%c", (char)output[i]);
+        }
+
+        free(input);
+        return 0;
+    } else {
+        printf("Foramt: base64 [-e|-d] filename\n");
+        return 1;
     }
-
-    for (unsigned int i = 0; i < ds; i++) {
-        printf("%c", (char)input[i]);
-    }
-
-    printf("\n");
-
-    free(input);
-    free(output);
-
-	return 0;
 }
 
 uint8_t *readFileBinary(char *filename, unsigned long *size) {
@@ -70,4 +78,27 @@ uint8_t *readFileBinary(char *filename, unsigned long *size) {
     fclose(filePtr);
     *size = (unsigned long)fileSize;
     return fileBuf;
+}
+
+int parseArguments(int argc, char **argv, char **mode, char **filename) {
+    if (argc != 3) {
+        return 0;
+    }
+
+    char *arg1 = argv[1];
+    char *arg2 = argv[2];
+
+    if (strcmp(arg1, "-e") == 0 || strcmp(arg1, "-d") == 0) {
+        *mode = arg1;
+        *filename = arg2;
+        return 1;
+    }
+
+    if (strcmp(arg2, "-e") == 0 || strcmp(arg2, "-d") == 0) {
+        *mode = arg2;
+        *filename = arg1;
+        return 1;
+    }
+
+    return 0;
 }

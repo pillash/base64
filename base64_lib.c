@@ -57,7 +57,7 @@ char *base64encode(uint8_t *input, unsigned long size, unsigned long *eSize)
 }
 
 uint8_t *base64decode(char *input, unsigned long size, unsigned long *dSize) {
-    if (size < 2 || input == NULL || input[size] != '\0') {
+    if (size < 2 || input == NULL) {
         return NULL;
     }
 
