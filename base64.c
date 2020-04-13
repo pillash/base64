@@ -12,7 +12,7 @@ int main(int argc, char ** argv) {
     char *mode;
     char *filename;
     if (parseArguments(argc, argv, &mode, &filename) == 0) {
-        printf("Foramt: base64 [-e|-d] filename\n");
+        printf("Format: base64 [-e|-d] filename\n");
         return 0;
     }
 
@@ -43,7 +43,7 @@ int main(int argc, char ** argv) {
         free(input);
         return 0;
     } else {
-        printf("Foramt: base64 [-e|-d] filename\n");
+        printf("Format: base64 [-e|-d] filename\n");
         return 1;
     }
 }
